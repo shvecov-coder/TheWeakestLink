@@ -1,15 +1,18 @@
 import time
 import threading
+from question import Question
 from PySide6.QtWidgets import QLabel, QTimeEdit
 
 class Game:
 
     window = None
+    questions = Question('question.txt')
     curr_bank = 0
     summ_array = [5, 10, 15, 20 ,30, 45, 65, 100]
     bank_round = 0
     bank_game = 0
     players = []
+    quiestions = {}
     thread_timer = None
     thread_exit_flag = False
 
@@ -20,9 +23,10 @@ class Game:
         self.window.ui.yes.released.connect(self.push_yes)
         self.window.ui.bank.released.connect(self.push_bank)
         self.window.ui.timerStart_90.released.connect(self.push_90)
+        self.window.ui.reset.released.connect(self.push_reset)
 
     def get_curr_value_bank(self):
-        return self.summ_array[self.curr_bank]
+        return self.summ_array[self.curr_bank - 1]
 
     def get_curr_idx_bank(self):
         return self.curr_bank
@@ -30,12 +34,13 @@ class Game:
     def push_yes(self):
         len_bank = self.get_len_bank()
 
-        if self.curr_bank == len_bank - 1:
+        if self.curr_bank == len_bank:
             return
-        
-        self.curr_bank += 1
+
         print(self.get_curr_idx_bank())
-        self.set_active_bank(self.curr_bank + 1)
+        self.curr_bank += 1
+        if (self.curr_bank <= self.get_len_bank() - 1):
+            self.set_active_bank(self.curr_bank + 1)
 
     def set_active_bank(self, idx):
 
@@ -53,6 +58,14 @@ class Game:
                                     "font-size: 15px;")
 
     def start_game(self):
+        lst_question = self.questions.get_answers()
+        str_for_label = ''
+
+        for i, quest in enumerate(lst_question):
+            text = quest['question_text']
+            answer = quest['question_answer']
+            str_for_label += f'Вопрос №{i}:\n{text}\nОтвет:\n{answer}\n' + '---' * 10 + '\n\n'
+        self.window.ui.questionsList.setPlainText(str_for_label)
         self.set_active_bank(1)
 
     def get_len_bank(self):
@@ -85,3 +98,10 @@ class Game:
     def push_90(self):
         self.thread_timer = threading.Thread(target=self.start_timer, args=[90])
         self.thread_timer.start()
+
+    def push_reset(self):
+        self.curr_bank = 0
+        self.bank_round = 0
+        self.bank_game = 0
+        self.set_active_bank(1)
+        self.window.ui.resultRound.setText(f'{self.bank_round}')
